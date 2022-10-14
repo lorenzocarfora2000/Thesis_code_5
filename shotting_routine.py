@@ -125,14 +125,14 @@ def objective2(R0, vals):
     return [Val, n]
     
 
-R0 = 1.5
-N = 1 
+R0 = 1.1
+N = 0 
 d , sigma = 2, 1
 
 
 val = np.array([d, sigma, N])
 
-r_max = 15
+r_max = 6
 
 #guess1 = np.array([R0])
 #R0, = fsolve(objective1, guess1, args=(val) )
@@ -158,6 +158,7 @@ plt.ylabel("R")
 plt.title("solution $R({})$ for d = {}, $\sigma$={}".format(N, d, sigma))
 plt.grid(True)
 
+print("starting point R(0) = {}".format(R0))
 
 
 
