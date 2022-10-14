@@ -80,7 +80,7 @@ def ring_sol(p, G, dG, args):
         return G*(1-abs(G)**(4/d) - y*(p**2)) - dG*(d-1)/p
 
 
-p_max = 40   #propagation radius limit
+p_max = 80   #propagation radius limit
 G0 = 5e-4
 
 d, a = 2,  0.42

@@ -40,7 +40,7 @@ def RKF45(t0, tf, vec_0, values, dvdt):
     t0 , vec_0 = t0, vec_0
     
     #initial imposed stepsize & error tolerance
-    h, epsilon_0 =  1e-2, 1e-8
+    h, epsilon_0 =  1e-2, 1e-4
     
     """
     pos takes count of the number of iterations calculated in the array.
@@ -50,7 +50,7 @@ def RKF45(t0, tf, vec_0, values, dvdt):
     pos = 1
     cut = 1
     while t0 < tf:
-        
+        print("time = {}".format(t0))
         #matrix to be filled with the k values:
         k = np.zeros((length, 6), dtype=complex)
         k[:, 0] =  h*dvdt(vec_0, values)
@@ -63,7 +63,7 @@ def RKF45(t0, tf, vec_0, values, dvdt):
             
         #truncation error:
         eps = max([abs(np.dot(diff, k[i])) for i in range(len(k))])
-
+        print(eps)
         if eps > epsilon_0:    
             #new step calculated and procedure repeated
             h = 0.87*h*(epsilon_0/eps)**(1/5) 
@@ -130,7 +130,7 @@ def D(N):
 
 def Delta_D(N, dx, d):
     I = np.identity(N)
-    Delta = np.matrix((2*I - U(N) - D(N))/(dx**2))+0j
+    Delta = np.matrix((2*I - U(N) - D(N))/(dx**2))
     
     for i in range(d-1):
         Delta = np.kron(Delta, I) + np.kron(I, Delta)
@@ -139,54 +139,70 @@ def Delta_D(N, dx, d):
 
 def NLS(X, Delta):
     
-    NL = np.diag( X*np.conj(X) )
-    dPdt = np.matrix(1j*(-Delta+NL))*np.matrix(X).T
+    """
+    u, v = np.real(X), np.imag(X)
     
+    couple = (u**2 + v**2)*[u, v]
+    
+    u, v = np.matrix(u).T, np.matrix(v).T
+    
+    dudt = -Delta*v - np.matrix(couple[1]).T
+    dvdt = Delta*u - np.matrix(couple[0]).T
+    
+    dPdt = dudt + 1j*dvdt
+
+    """
+    
+    NL = np.diag( X*np.conj(X) )
+    
+    dPdt = np.matrix(1j*(-Delta+NL))*np.matrix(X).T
+
     return np.asarray(dPdt.T)[0]     #np.array(dPdt.T)[0]
 
     
-d = 1 
-w = 1
+d = 2 
+w = 2
    
-x = np.linspace(-7, 7, 70)
-Psi0 = np.sqrt(2*w)/np.cosh(np.sqrt(w)*x)
+x = y =  np.linspace(-6, 6, 40)
 
 N, dx = len(x), x[1]-x[0]
 
+X, Y = np.meshgrid(x, y)
 
-Delta = Delta_D(N, dx, d)
+Psi0 = 2*np.sqrt(w)/(np.cosh(np.sqrt(w)*(X+Y)))
 
-sol = RKF45(0, 10, Psi0, Delta, NLS)
-
-t = sol[0]
-Psi = sol[1]
-
-Psi_squared = np.real(Psi)
-tmesh, xmesh = np.meshgrid(t, x)
 
 fig = plt.figure(figsize=(9, 10))
- 
-# syntax for 3-D plotting
 ax = plt.axes(projection ='3d')
- 
-# syntax for plotting
-ax.plot_surface(tmesh, xmesh, Psi_squared, cmap ='viridis', edgecolor ='green')
-ax.set_title("1D Nonlinear Schrodinger Equation via Range-Kutta")
+ax.plot_surface(X, Y, Psi0, cmap ='viridis', edgecolor ='green')
+ax.set_title("Analytical t=0 solution")
 ax.set(ylabel = "x space", xlabel= "time", zlabel = "wavefunction (Real Part)")
 plt.show()
 
+Delta = Delta_D(N, dx, d)
+print("Delta computed!")
 
-def true_Psi(x, t, w): return (np.sqrt(2*w)/np.cosh(np.sqrt(w)*x))*np.exp(w*1j*t)
-
-true = np.real(true_Psi(xmesh, tmesh, w))
-
-fig2 = plt.figure(figsize=(9, 10))
-ax2 = plt.axes(projection ='3d')
-  
-# syntax for plotting
-ax2.plot_surface(tmesh, xmesh, true, cmap ='viridis', edgecolor ='green')
-ax2.set_title("Analytical solution for NLSE ")
-ax2.set(ylabel = "x space", xlabel= "time", zlabel = "wavefunction (Real Part)")
-plt.show()
+Psi0_arr = np.reshape(Psi0, -1)
 
 
+sol = RKF45(0, 2, Psi0_arr, Delta, NLS)
+print("computed solutions")
+
+t = sol[0]
+
+Psi = sol[1]
+
+Psi_squared = np.real(Psi*np.conj(Psi))
+
+tmesh, xmesh = np.meshgrid(t, x)
+
+def Pr(n): return np.reshape(Psi_squared[:, n], (N, N))
+
+ 
+def plot(n):
+    ax = plt.axes(projection ='3d')
+    ax.plot_surface(tmesh, xmesh, Pr(n), cmap ='viridis', edgecolor ='green')
+    ax.set_title("1D Nonlinear Schrodinger Equation via Range-Kutta")
+    ax.set(ylabel = "x space", xlabel= "time", zlabel = "wavefunction (Real Part)")
+    plt.show()
+    return

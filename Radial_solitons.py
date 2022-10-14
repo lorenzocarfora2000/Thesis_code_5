@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 #Butcher tableau data:
 rkf4 = np.array([25/216, 0., 1408/2565, 2197/4104, -1/5, 0.])
@@ -79,17 +80,21 @@ def radial_sol(r, R, dR, array):
     else: 
         return R - R*abs(R)**(2*sigma) - (d-1)*dR/r 
 
+
 def D1_soliton(r, sigma):
     return ((1+sigma)**(1/(2*sigma)))/(np.cosh(r)**(1/sigma))
 
-def small_approx(r, val, E):
-    d, sigma = val
-    return E + E/(2*d)*(1-abs(E)**(2*sigma))*r**2
-
-
 d, sigma = 2, 1    #dimensions and sigma parameters
-r_max = 18   #propagation radius limit
-E = 4.8295 #5.4255 #4.15008 #4.827 #(1+sigma)**(1/(2*sigma))    # E(0), the on-axis amplitude
+r_max = 17   #propagation radius limit
+E = 5.4254
+
+#2.2061914429335863
+#E(0), the on-axis amplitude
+#3.33198890015326034
+#5.4255 
+#4.15008
+#4.827 
+#(1+sigma)**(1/(2*sigma))
 
 
 val = np.array([d, sigma])
@@ -99,21 +104,20 @@ r = sol[0]
 R = sol[1]
 dR = sol[2]
 
-plt.figure(1)
-plt.plot(r, R)
-#plt.plot(r[:500], small_approx(r[:500], val, E) , "-.")
-plt.plot(r, D1_soliton(r, 1) , "--")
-plt.xlabel("radius r")
-plt.ylabel("Amplitude R")
-plt.title("NLS R from soliton solution R*e^{iwt}" )
-plt.grid(True)
+fig, (ax1, ax2) = plt.subplots(2, sharex = True, figsize=(5, 6))
+ax1.plot(r, R)
+ax1.plot(r, D1_soliton(r, 1) , "--")
+#ax1.set_xlabel("radius r")
+ax1.set_ylabel("Amplitude R(r)")
+ax1.set_title("NLS soliton solution R(r)*e^{iwt}" )
+ax1.grid(True)
 
-plt.figure(2)
-plt.plot(r, dR)
-plt.xlabel("radius r")
-plt.ylabel("R'")
-plt.title("NLS R from soliton solution R*e^{iwt}" )
-plt.grid(True)
+ax2.plot(r, dR)
+ax2.set_xlabel("radius r")
+ax2.set_ylabel("amplitude velocity R'(r)")
+ax2.grid(True)
+
+fig.tight_layout()
 
 
 def count_sols(R):
@@ -129,10 +133,31 @@ In = r*(R**2)
 I = 0
 for i in range(len(dr)):
     I += dr[i]*(In[i]+In[i+1])/2
-    
+
+C = count_sols(R)
 print("radial power = {}".format(I) )
-print("number of solutions = {}".format(count_sols(R)))
-    
+print("number of solutions = {}".format(C))
+
+
+R = np.append(R, np.zeros(2))
+r = np.append(r, np.linspace(r[-1], r[-1]+10, 2))
+
+p = np.linspace(0, 2*np.pi, 50)
+
+Rmesh , pmesh = np.meshgrid(R, p)
+rmesh, pmesh = np.meshgrid(r, p)
+  
+X, Y  = rmesh*np.cos(pmesh), rmesh*np.sin(pmesh)
+
+fig = plt.figure(figsize=(9, 10))
+ax = plt.axes(projection ='3d')
+ax.plot_surface(X, Y, Rmesh, cmap ='viridis', edgecolor ='yellow')
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("solution profile for t=0")
+ax.set_title("Solution for t=0 in 2D")
+fig.legend(title ="R^({}), noticeable from the number of radial solutions = {}".format(C, C))
+
 
 
 
